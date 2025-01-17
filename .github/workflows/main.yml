@@ -43,14 +43,30 @@ jobs:
         Install-PackageWithRetry -packageName "chrome-remote-desktop-host"
         Install-PackageWithRetry -packageName "googlechrome"
 
-    - name: new feature lol
+    - name: Set Desktop Wallpaper
       run: |
         $WallpaperUrl = "https://i.ibb.co/7QBjY1q/20241214-020008.jpg"
         $WallpaperPath = "$Env:USERPROFILE\Documents\wallpaper.jpg"
+        $RetryCount = 0
+        $MaxRetries = 3
 
-        # Download the wallpaper
-        Invoke-WebRequest -Uri $WallpaperUrl -OutFile $WallpaperPath
-        
+        while ($RetryCount -lt $MaxRetries) {
+            try {
+                Invoke-WebRequest -Uri $WallpaperUrl -OutFile $WallpaperPath -ErrorAction Stop
+                Write-Host "Wallpaper downloaded successfully."
+                break
+            } catch {
+                Write-Host "Attempt $($RetryCount+1) failed. Retrying..."
+                Start-Sleep -Seconds 5
+                $RetryCount++
+            }
+        }
+
+        if (!(Test-Path $WallpaperPath)) {
+            Write-Host "Failed to download wallpaper after $MaxRetries attempts."
+            exit 1
+        }
+
         # Set the wallpaper
         Add-Type -TypeDefinition @"
         using System;
@@ -108,4 +124,3 @@ jobs:
             Start-Sleep 60
             $i--
         } while ($i -gt 0)
-        l

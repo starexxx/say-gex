@@ -1,10 +1,10 @@
-name: SAY GEX
+name: SATURN 444 LK
 
 on:
   workflow_dispatch:
     inputs:
       code:
-        description: PAY GORN
+        description: Paste Chrome Remote Desktop Code
         required: true
 
 jobs:
@@ -43,30 +43,14 @@ jobs:
         Install-PackageWithRetry -packageName "chrome-remote-desktop-host"
         Install-PackageWithRetry -packageName "googlechrome"
 
-    - name: Set Desktop Wallpaper
+    - name: new feature lol
       run: |
         $WallpaperUrl = "https://i.ibb.co/7QBjY1q/20241214-020008.jpg"
         $WallpaperPath = "$Env:USERPROFILE\Documents\wallpaper.jpg"
-        $RetryCount = 0
-        $MaxRetries = 5  # Increased retries
 
-        while ($RetryCount -lt $MaxRetries) {
-            try {
-                Invoke-WebRequest -Uri $WallpaperUrl -OutFile $WallpaperPath -ErrorAction Stop
-                Write-Host "Wallpaper downloaded successfully."
-                break
-            } catch {
-                Write-Host "Attempt $($RetryCount+1) failed. Retrying in 10 seconds..."
-                Start-Sleep -Seconds 10
-                $RetryCount++
-            }
-        }
-
-        if (!(Test-Path $WallpaperPath)) {
-            Write-Host "Failed to download wallpaper after $MaxRetries attempts."
-            exit 1
-        }
-
+        # Download the wallpaper
+        Invoke-WebRequest -Uri $WallpaperUrl -OutFile $WallpaperPath
+        
         # Set the wallpaper
         Add-Type -TypeDefinition @"
         using System;
@@ -81,18 +65,19 @@ jobs:
         Write-Host "Wallpaper set successfully."
 
     - name: Download and Extract Free Fire Ripper
+      continue-on-error: true
       run: |
         cd C:\Users\$Env:USERNAME\Documents
         try {
-          Invoke-WebRequest -Uri "https://example.com/ffripper.zip" -OutFile ffripper.zip
+          Invoke-WebRequest -Uri "https://drive.usercontent.google.com/download?id=11EUFz6hufNT1g56-CmOJw9_KxMERZxhe&export=download" -OutFile ffripper.zip
           7z x ffripper.zip -y
-          Write-Host "Download and extraction completed."
         } catch {
           Write-Host "Download or extraction failed."
           exit 1
         }
 
     - name: Start Chrome Remote Desktop
+      continue-on-error: true
       run: |
         function Start-RemoteDesktop {
           $paths = @("${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe", "${Env:PROGRAMFILES}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe")
@@ -110,6 +95,7 @@ jobs:
         New-Item -ItemType SymbolicLink -Target "C:\Users\$Env:USERNAME\Documents\noesis\Noesis64.exe" -Path "C:\Users\$Env:USERNAME\Desktop\Noesis.lnk"
 
     - name: Start Remote Desktop Session
+      continue-on-error: true
       run: |
         Write-Host "Connecting to VM with Remote Desktop"
         ${{ inputs.code }} --pin=444444
@@ -122,3 +108,4 @@ jobs:
             Start-Sleep 60
             $i--
         } while ($i -gt 0)
+

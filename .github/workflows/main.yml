@@ -48,7 +48,7 @@ jobs:
         $WallpaperUrl = "https://i.ibb.co/7QBjY1q/20241214-020008.jpg"
         $WallpaperPath = "$Env:USERPROFILE\Documents\wallpaper.jpg"
         $RetryCount = 0
-        $MaxRetries = 3
+        $MaxRetries = 5  # Increased retries
 
         while ($RetryCount -lt $MaxRetries) {
             try {
@@ -56,8 +56,8 @@ jobs:
                 Write-Host "Wallpaper downloaded successfully."
                 break
             } catch {
-                Write-Host "Attempt $($RetryCount+1) failed. Retrying..."
-                Start-Sleep -Seconds 5
+                Write-Host "Attempt $($RetryCount+1) failed. Retrying in 10 seconds..."
+                Start-Sleep -Seconds 10
                 $RetryCount++
             }
         }
@@ -81,19 +81,18 @@ jobs:
         Write-Host "Wallpaper set successfully."
 
     - name: Download and Extract Free Fire Ripper
-      continue-on-error: true
       run: |
         cd C:\Users\$Env:USERNAME\Documents
         try {
-          Invoke-WebRequest -Uri "https://drive.usercontent.google.com/download?id=11EUFz6hufNT1g56-CmOJw9_KxMERZxhe&export=download" -OutFile ffripper.zip
+          Invoke-WebRequest -Uri "https://example.com/ffripper.zip" -OutFile ffripper.zip
           7z x ffripper.zip -y
+          Write-Host "Download and extraction completed."
         } catch {
           Write-Host "Download or extraction failed."
           exit 1
         }
 
     - name: Start Chrome Remote Desktop
-      continue-on-error: true
       run: |
         function Start-RemoteDesktop {
           $paths = @("${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe", "${Env:PROGRAMFILES}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe")
@@ -111,7 +110,6 @@ jobs:
         New-Item -ItemType SymbolicLink -Target "C:\Users\$Env:USERNAME\Documents\noesis\Noesis64.exe" -Path "C:\Users\$Env:USERNAME\Desktop\Noesis.lnk"
 
     - name: Start Remote Desktop Session
-      continue-on-error: true
       run: |
         Write-Host "Connecting to VM with Remote Desktop"
         ${{ inputs.code }} --pin=444444

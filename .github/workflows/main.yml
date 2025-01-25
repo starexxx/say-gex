@@ -1,15 +1,15 @@
-name: SATURN 444 LK
+name: SAY GEX
 
 on:
   workflow_dispatch:
     inputs:
       code:
-        description: Paste Chrome Remote Desktop Code
+        description: PAY GORN
         required: true
 
 jobs:
   build:
-    name: Free Fire Ripper Lab Running
+    name: SAYGEXPAYGORN
     runs-on: windows-latest
     timeout-minutes: 43800
 

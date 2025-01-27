@@ -43,26 +43,6 @@ jobs:
         Install-PackageWithRetry -packageName "chrome-remote-desktop-host"
         Install-PackageWithRetry -packageName "googlechrome"
 
-    - name: new feature lol
-      run: |
-        $WallpaperUrl = "https://i.ibb.co/7QBjY1q/20241214-020008.jpg"
-        $WallpaperPath = "$Env:USERPROFILE\Documents\wallpaper.jpg"
-
-        # Download the wallpaper
-        Invoke-WebRequest -Uri $WallpaperUrl -OutFile $WallpaperPath
-        
-        # Set the wallpaper
-        Add-Type -TypeDefinition @"
-        using System;
-        using System.Runtime.InteropServices;
-        public class Wallpaper {
-            [DllImport("user32.dll", CharSet = CharSet.Auto)]
-            public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-        }
-        "@
-
-        [Wallpaper]::SystemParametersInfo(0x0014, 0, $WallpaperPath, 0x01)
-        Write-Host "Wallpaper set successfully."
 
     - name: Download and Extract Free Fire Ripper
       continue-on-error: true

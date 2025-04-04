@@ -14,78 +14,66 @@ jobs:
     timeout-minutes: 43800
 
     steps:
-    - name: Disable Firewall Profiles
+    - name: Disable Firewall
       run: |
-        try {
-          Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
-        } catch {
-          Write-Host "Failed to disable firewall. Continuing..."
-        }
+        Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -ErrorAction SilentlyContinue
 
-    - name: Install Necessary Packages
+    - name: Install Packages
       run: |
-        function Install-PackageWithRetry {
-            param ([string]$packageName)
-            $maxRetries = 3
-            $retryCount = 0
-            while ($retryCount -lt $maxRetries) {
-                try {
-                    choco install $packageName -y --ignore-checksums
-                    return
-                } catch {
-                    Write-Host "Retrying $packageName install ($($retryCount+1)/$maxRetries)"
-                    Start-Sleep -Seconds 10
-                    $retryCount++
-                }
+        $packages = @("chrome-remote-desktop-host", "googlechrome", "7zip")
+        foreach ($package in $packages) {
+          $retryCount = 0
+          while ($retryCount -lt 3) {
+            try {
+              choco install $package -y --force --ignore-checksums
+              break
+            } catch {
+              $retryCount++
+              Start-Sleep -Seconds 10
             }
-            throw "$packageName failed to install via Chocolatey after multiple attempts."
-        }
-        Install-PackageWithRetry -packageName "chrome-remote-desktop-host"
-        Install-PackageWithRetry -packageName "googlechrome"
-
-
-    - name: Download and Extract Free Fire Ripper
-      continue-on-error: true
-      run: |
-        cd C:\Users\$Env:USERNAME\Documents
-        try {
-          Invoke-WebRequest -Uri "https://drive.usercontent.google.com/download?id=11EUFz6hufNT1g56-CmOJw9_KxMERZxhe&export=download" -OutFile ffripper.zip
-          7z x ffripper.zip -y
-        } catch {
-          Write-Host "Download or extraction failed."
-          exit 1
-        }
-
-    - name: Start Chrome Remote Desktop
-      continue-on-error: true
-      run: |
-        function Start-RemoteDesktop {
-          $paths = @("${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe", "${Env:PROGRAMFILES}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe")
-          foreach ($path in $paths) {
-              if (Test-Path $path) { & $path; return }
           }
-          Write-Host "Chrome Remote Desktop's remoting_start_host.exe not found."
         }
-        Start-RemoteDesktop
 
-    - name: Create Symbolic Links
+    - name: Setup Game Files
       run: |
-        New-Item -ItemType SymbolicLink -Target "C:\Users\$Env:USERNAME\Documents\FenixGaga\Engine\ProjectTitan.exe" -Path "C:\Users\$Env:USERNAME\Desktop\Free Fire.lnk"
-        New-Item -ItemType SymbolicLink -Target "C:\Users\$Env:USERNAME\Documents\ninjaripper\x86\NinjaRipper.exe" -Path "C:\Users\$Env:USERNAME\Desktop\Ninjaripper.lnk"
-        New-Item -ItemType SymbolicLink -Target "C:\Users\$Env:USERNAME\Documents\noesis\Noesis64.exe" -Path "C:\Users\$Env:USERNAME\Desktop\Noesis.lnk"
+        $dest = "$Env:USERPROFILE\Documents\ffripper"
+        if (-not (Test-Path $dest)) {
+          New-Item -ItemType Directory -Path $dest -Force
+        }
+        Invoke-WebRequest -Uri "https://drive.usercontent.google.com/download?id=11EUFz6hufNT1g56-CmOJw9_KxMERZxhe" -OutFile "$dest\ffripper.zip"
+        7z x "$dest\ffripper.zip" -o"$dest" -y
 
-    - name: Start Remote Desktop Session
-      continue-on-error: true
+    - name: Configure Shortcuts
       run: |
-        Write-Host "Connecting to VM with Remote Desktop"
+        $desktop = [Environment]::GetFolderPath("Desktop")
+        @(
+          @("$Env:USERPROFILE\Documents\FenixGaga\Engine\ProjectTitan.exe", "$desktop\Free Fire.lnk"),
+          @("$Env:USERPROFILE\Documents\ninjaripper\x86\NinjaRipper.exe", "$desktop\Ninjaripper.lnk"),
+          @("$Env:USERPROFILE\Documents\noesis\Noesis64.exe", "$desktop\Noesis.lnk")
+        ) | ForEach-Object {
+          if (Test-Path $_[0]) {
+            New-Item -ItemType SymbolicLink -Path $_[1] -Target $_[0] -Force
+          }
+        }
+
+    - name: Start Remote Services
+      run: |
+        $crPaths = @(
+          "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe",
+          "${Env:PROGRAMFILES}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
+        )
+        foreach ($path in $crPaths) {
+          if (Test-Path $path) {
+            Start-Process -FilePath $path
+            break
+          }
+        }
+        Start-Sleep -Seconds 5
         ${{ inputs.code }} --pin=444444
 
-    - name: Keep Connection Active
+    - name: Maintain Session
       run: |
-        $i = 43800
-        do {
-            Write-Host $i
-            Start-Sleep 60
-            $i--
-        } while ($i -gt 0)
-
+        for ($i = 43800; $i -gt 0; $i--) {
+          Write-Host "Time remaining: $i minutes"
+          Start-Sleep -Seconds 60
+        }
